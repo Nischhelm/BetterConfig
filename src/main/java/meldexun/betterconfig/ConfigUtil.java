@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import net.minecraftforge.common.config.Config;
 
@@ -47,23 +48,21 @@ public class ConfigUtil {
 	}
 
 	public static Field[] getConfigFields(Type type, boolean staticFields) {
-		if (staticFields) {
-			return STATIC_FIELDS.computeIfAbsent(type, k -> {
-				return Arrays.stream(TypeUtil.getRawType(k).getDeclaredFields())
-						.filter(f -> Modifier.isPublic(f.getModifiers()))
-						.filter(f -> Modifier.isStatic(f.getModifiers()))
-						.filter(f -> !f.isAnnotationPresent(Config.Ignore.class))
-						.toArray(Field[]::new);
-			});
-		} else {
-			return NON_STATIC_FIELDS.computeIfAbsent(type, k -> {
-				return Arrays.stream(TypeUtil.getRawType(k).getDeclaredFields())
-						.filter(f -> Modifier.isPublic(f.getModifiers()))
-						.filter(f -> !Modifier.isStatic(f.getModifiers()))
-						.filter(f -> !f.isAnnotationPresent(Config.Ignore.class))
-						.toArray(Field[]::new);
-			});
+		Map<Type, Field[]> map = staticFields ? STATIC_FIELDS : NON_STATIC_FIELDS;
+		Field[] fields = map.get(type);
+		if (fields == null) {
+			Class<?> rawType = TypeUtil.getRawType(type);
+			Stream<Field> stream = Arrays.stream(rawType.getDeclaredFields())
+					.filter(f -> Modifier.isPublic(f.getModifiers()))
+					.filter(f -> Modifier.isStatic(f.getModifiers()) == staticFields)
+					.filter(f -> !f.isAnnotationPresent(Config.Ignore.class));
+			Class<?> rawSuperType = rawType.getSuperclass();
+			if (rawSuperType != null && !rawSuperType.equals(Object.class)) {
+				stream = Stream.concat(Arrays.stream(getConfigFields(rawSuperType, staticFields)), stream);
+			}
+			map.put(type, fields = stream.toArray(Field[]::new));
 		}
+		return fields;
 	}
 
 }

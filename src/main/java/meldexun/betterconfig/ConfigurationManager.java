@@ -24,7 +24,7 @@ import net.minecraftforge.fml.common.LoaderState;
 import net.minecraftforge.fml.common.discovery.ASMDataTable.ASMData;
 
 @SuppressWarnings("unchecked")
-public class ConfigurationManger {
+public class ConfigurationManager {
 
 	private static final Map<File, ConfigCategory> BETTER_CONFIGS = new HashMap<>();
 	private static final Multimap<File, String> LOADED_CATEGORIES = HashMultimap.create();

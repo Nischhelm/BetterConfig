@@ -11,6 +11,7 @@ import meldexun.betterconfig.gui.entry.AbstractEntry;
 import meldexun.betterconfig.gui.entry.CategoryEntry;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.fml.client.config.GuiConfigEntries.ListEntryBase;
+import net.minecraftforge.fml.client.config.HoverChecker;
 import net.minecraftforge.fml.client.config.IConfigElement;
 
 public class ConfigCategoryGuiEntry extends ListEntryBase implements IGuiListEntryExtended, ListEntryBaseExt {
@@ -37,6 +38,7 @@ public class ConfigCategoryGuiEntry extends ListEntryBase implements IGuiListEnt
 		if (this.entry instanceof CategoryEntry) {
 			this.drawLabel = false;
 			((CategoryEntry) this.entry).getButton().displayString = this.getName();
+			this.tooltipHoverChecker = new HoverChecker(((CategoryEntry) this.entry).getButton(), 800);
 		}
 	}
 
@@ -51,6 +53,7 @@ public class ConfigCategoryGuiEntry extends ListEntryBase implements IGuiListEnt
 		if (this.entry instanceof CategoryEntry) {
 			this.drawLabel = false;
 			((CategoryEntry) this.entry).getButton().displayString = this.getName();
+			this.tooltipHoverChecker = new HoverChecker(((CategoryEntry) this.entry).getButton(), 800);
 		}
 	}
 

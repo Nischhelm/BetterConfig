@@ -23,7 +23,7 @@ public class ConfigListGui extends GuiEditArray implements TitledGui, ConfigGui 
 	private final Object beforeValue;
 
 	public ConfigListGui(GuiScreen parentScreen, Supplier<String> titleSupplier, EntryInfo info, Type type, Object defaultValue, Object beforeValue) {
-		super(parentScreen, new DummyConfigElement(info, type), 0, new Object[0], true);
+		super(parentScreen, new DummyConfigElement(info, type, defaultValue), 0, new Object[0], true);
 		this.titleSupplier = titleSupplier;
 		this.info = info;
 		this.type = type;

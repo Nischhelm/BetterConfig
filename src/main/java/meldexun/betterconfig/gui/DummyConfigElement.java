@@ -17,11 +17,19 @@ import net.minecraftforge.fml.client.config.IConfigElement;
 public class DummyConfigElement implements IConfigElement {
 
 	private final EntryInfo info;
+	private final Type type;
+	private final Object defaultValue;
 	private final ConfigGuiType configType;
 	private final boolean isList;
 
 	public DummyConfigElement(EntryInfo info, Type type) {
+		this(info, type, info.defaultValue());
+	}
+
+	public DummyConfigElement(EntryInfo info, Type type, Object defaultValue) {
 		this.info = info;
+		this.type = type;
+		this.defaultValue = defaultValue;
 		if (TypeAdapters.hasAdapter(type)) {
 			this.isList = false;
 			if (TypeUtils.isAssignable(type, boolean.class)) {
@@ -145,7 +153,7 @@ public class DummyConfigElement implements IConfigElement {
 	@Deprecated
 	@Override
 	public Object getDefault() {
-		return null;
+		return TypeUtil.toString(this.type, this.defaultValue);
 	}
 
 	@Deprecated

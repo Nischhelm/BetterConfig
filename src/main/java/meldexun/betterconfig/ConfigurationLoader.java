@@ -33,8 +33,14 @@ public class ConfigurationLoader {
 
 	public static void save(ConfigCategory cfg, File file) throws IOException {
 		try (BufferedWriter writer = Files.newBufferedWriter(file.toPath())) {
+
+			writer.write("# Better Configuration file");
+			writer.newLine();
+			writer.newLine();
+			//TODO: Configurations would also write config version here, maybe a cool feature to add that as an annotation or smth
+
 			for (Map.Entry<String, ConfigCategory> entry : cfg.subcategoriesSorted()) {
-				ConfigCategory.writeEntry(writer, 0, entry.getKey(), entry.getValue());
+				ConfigCategory.writeEntry(writer, 0, entry.getKey(), entry.getValue(), true);
 				writer.newLine();
 			}
 		}

@@ -11,6 +11,7 @@ abstract class ConfigElement {
 
 	final DefaultSupplier<Type> type;
 	int order;
+	String[] comment;
 
 	ConfigElement(DefaultSupplier<Type> type) {
 		this.type = Objects.requireNonNull(type).copy();
@@ -50,4 +51,7 @@ abstract class ConfigElement {
 		return this.order;
 	}
 
+	protected void setComment(String[] comment) {
+		this.comment = comment;
+	}
 }

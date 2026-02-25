@@ -15,11 +15,14 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
+import com.google.common.base.Splitter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
 import meldexun.betterconfig.api.Order;
 import net.minecraftforge.common.config.Config;
+
+import static net.minecraftforge.common.config.Configuration.COMMENT_SEPARATOR;
 
 class ConfigCategory extends ConfigElement {
 
@@ -147,21 +150,25 @@ class ConfigCategory extends ConfigElement {
 	void write(BufferedWriter writer, int indent) throws IOException {
 		writer.write('{');
 		writer.newLine();
+		boolean isFirst = true;
 		for (Map.Entry<String, ConfigElement> entry : this.elementsSorted()) {
-			ConfigurationLoader.indent(writer, indent + 1);
-			writeEntry(writer, indent + 1, entry.getKey(), entry.getValue());
+			writeEntry(writer, indent + 1, entry.getKey(), entry.getValue(), isFirst);
 			writer.newLine();
+			isFirst = false;
 		}
 		for (Map.Entry<String, ConfigCategory> entry : this.subcategoriesSorted()) {
-			ConfigurationLoader.indent(writer, indent + 1);
-			writeEntry(writer, indent + 1, entry.getKey(), entry.getValue());
+			writeEntry(writer, indent + 1, entry.getKey(), entry.getValue(), isFirst);
 			writer.newLine();
+			isFirst = false;
 		}
 		ConfigurationLoader.indent(writer, indent);
 		writer.write('}');
 	}
 
-	static void writeEntry(BufferedWriter writer, int indent, String name, ConfigElement element) throws IOException {
+	static void writeEntry(BufferedWriter writer, int indent, String name, ConfigElement element, boolean isFirst) throws IOException {
+		writeComment(writer, indent, name, element.comment, element instanceof ConfigCategory, isFirst);
+
+		ConfigurationLoader.indent(writer, indent);
 		if (element instanceof ConfigValue) {
 			writer.write(serializeType((ConfigValue) element));
 			writer.write(':');
@@ -226,6 +233,171 @@ class ConfigCategory extends ConfigElement {
 		}
 	}
 
+	enum EnumCommentLayout {
+		MINIMAL, //treats categories and entries the same, will only print the actual comment, not the name of the category with lots of ###### and #-------#
+		FORGE, //exactly on pair with how forge does it, including unclean behavior
+		FORGE_FIXED, //close to forge with two small fixes for categories (no newline if first element, no newline to bottom/category entry, undecided about that one so added a boolean for it)
+		FORGE_FIXED_ALWAYS_NAMES, //same as FORGE_FIXED with additionally always printing ####\n categoryname\n #### even if the category doesnt have comments. cleaner, but also prints #### general #### for the outermost category
+		FORGE_FIXED_NO_NAMES //same as FORGE_FIXED but never printing category names as that is kinda not needed anymore (categories are not all lowercase anymore). close to MINIMAL, except that categories get extra #-----# lines above and below
+	}
+	static EnumCommentLayout layout = EnumCommentLayout.FORGE_FIXED_NO_NAMES;
+	static boolean keepNewLineBelowCategoryComment = true; //TODO: im undecided about this fix vs forge, unused in MINIMAL
+
+	static final Splitter splitter = Splitter.onPattern("\r?\n");
+
+	static void writeComment(BufferedWriter writer, int indent, String name, String[] comments, boolean isCategory, boolean isFirstElement) throws IOException {
+		boolean noComments = comments == null || comments.length == 0;
+
+		switch (layout) {
+			case MINIMAL: {
+				if (noComments) return;
+				if (!isFirstElement) writer.newLine(); //listed elements are separated by newline, first one isnt separated to the { in line before
+
+				writeComments(writer, indent, comments);
+
+				return;
+			}
+			case FORGE: {
+				if(noComments) return;
+
+				if (isCategory) {
+					writer.newLine(); //unclean and not in parity to non-category entries, should only do it if !isFirstElement
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write("# " + name);
+					writer.newLine();
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write("#--------------------------------------------------------------------------------------------------------#");
+					writer.newLine();
+
+					writeComments(writer, indent, comments);
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+					writer.newLine(); //unclean, separation of comment to config entry = keepNewLineBelowCategoryComment
+				} else {
+					if (!isFirstElement)
+						writer.newLine(); //listed elements are separated by newline, first one isnt separated to the { of line before
+
+					writeComments(writer, indent, comments);
+				}
+				return;
+			}
+			case FORGE_FIXED: {
+				if (noComments) return;
+
+				if (isCategory) {
+					if(!isFirstElement) writer.newLine(); //listed elements are separated by newline, first one isnt separated to the { in line before
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write("# " + name);
+					writer.newLine();
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write("#--------------------------------------------------------------------------------------------------------#");
+					writer.newLine();
+
+					writeComments(writer, indent, comments);
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+					if(keepNewLineBelowCategoryComment) writer.newLine();
+				} else {
+					if (!isFirstElement) writer.newLine(); //listed elements are separated by newline, first one isnt separated to the { of line before
+
+					writeComments(writer, indent, comments);
+				}
+				return;
+			}
+
+			case FORGE_FIXED_ALWAYS_NAMES: {
+				if(isCategory){
+					if(!isFirstElement) writer.newLine(); //listed elements are separated by newline, first one isnt separated to the { in line before
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write("# " + name);
+					writer.newLine();
+
+					if(noComments) {
+						ConfigurationLoader.indent(writer, indent);
+						writer.write(COMMENT_SEPARATOR);
+						writer.newLine();
+						if(keepNewLineBelowCategoryComment) writer.newLine();
+					}
+				}
+
+				if (noComments) return;
+
+				if (isCategory) {
+					ConfigurationLoader.indent(writer, indent);
+					writer.write("#--------------------------------------------------------------------------------------------------------#");
+					writer.newLine();
+
+					writeComments(writer, indent, comments);
+
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+					if(keepNewLineBelowCategoryComment) writer.newLine();
+				} else {
+					if (!isFirstElement) writer.newLine(); //listed elements are separated by newline, first one isnt separated to the { of line before
+
+					writeComments(writer, indent, comments);
+				}
+				return;
+			}
+
+			case FORGE_FIXED_NO_NAMES: {
+				if (noComments) return;
+
+				if(!isFirstElement) writer.newLine(); //listed elements are separated by newline, first one isnt separated to the { of line before
+
+				if (isCategory) {
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+					if(keepNewLineBelowCategoryComment) writer.newLine();
+				}
+
+				writeComments(writer, indent, comments);
+
+				if(isCategory) {
+					ConfigurationLoader.indent(writer, indent);
+					writer.write(COMMENT_SEPARATOR);
+					writer.newLine();
+				}
+
+				return;
+			}
+		}
+	}
+
+	static void writeComments(BufferedWriter writer, int indent, String[] comments) throws IOException {
+		for (String comment : comments) {
+			for (String line : splitter.split(comment)) {
+				ConfigurationLoader.indent(writer, indent);
+				writer.write("# " + line);
+				writer.newLine();
+				//TODO: range, defaultvalue etc maybe? forge Configuration does that, @Config doesnt
+			}
+		}
+	}
+
 	@Override
 	void saveToConfig(Type type, @Nullable Object instance) {
 		Objects.requireNonNull(type);
@@ -260,6 +432,7 @@ class ConfigCategory extends ConfigElement {
 		} else {
 			for (Field field : ConfigUtil.getConfigFields(type, instance == null)) {
 				String name = field.isAnnotationPresent(Config.Name.class) ? field.getAnnotation(Config.Name.class).value() : field.getName();
+				String[] comment = field.isAnnotationPresent(Config.Comment.class) ? field.getAnnotation(Config.Comment.class).value() : null;
 				ConfigElement element;
 				if (ConfigUtil.isCategory(field.getGenericType())) {
 					element = this.subcategories.computeIfAbsent(name, k -> new ConfigCategory(DefaultSupplier.of(field.getGenericType())));
@@ -268,6 +441,7 @@ class ConfigCategory extends ConfigElement {
 				}
 				try {
 					element.saveToConfig(field.getGenericType(), field.get(instance));
+					element.setComment(comment);
 				} catch (IllegalArgumentException | IllegalAccessException e) {
 					throw new UnsupportedOperationException(e);
 				}

@@ -48,7 +48,7 @@ public class ConfigCategoryGuiEntry extends ListEntryBase implements IGuiListEnt
 		this.field = null;
 		this.info = EntryInfo.create(type);
 		this.beforeValue = null;
-		this.entry = AbstractEntry.create((T) this.owningScreen, this.info.guiName(), this.info, type, this.info.defaultValue(), this.beforeValue);
+		this.entry = new CategoryEntry((T) this.owningScreen, this.info::guiName, this.info, type, null);
 		if (this.entry instanceof CategoryEntry) {
 			this.drawLabel = false;
 			((CategoryEntry) this.entry).getButton().displayString = this.getName();

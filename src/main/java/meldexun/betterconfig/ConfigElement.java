@@ -8,25 +8,27 @@ import javax.annotation.Nullable;
 
 abstract class ConfigElement {
 
+	final Config config;
 	final DefaultSupplier<Type> type;
 	int order;
 
-	ConfigElement(DefaultSupplier<Type> type) {
+	ConfigElement(Config config, DefaultSupplier<Type> type) {
+		this.config = config;
 		this.type = Objects.requireNonNull(type).copy();
 	}
 
-	static ConfigElement create(Type type) {
-		return create(DefaultSupplier.of(type));
+	static ConfigElement create(Config config, Type type) {
+		return create(config, DefaultSupplier.of(type));
 	}
 
-	static ConfigElement create(DefaultSupplier<Type> type) {
+	static ConfigElement create(Config config, DefaultSupplier<Type> type) {
 		if (ConfigUtil.isValue(type.getOrDefault())) {
-			return new ConfigValue(type);
+			return new ConfigValue(config, type);
 		}
 		if (ConfigUtil.isList(type.getOrDefault())) {
-			return new ConfigList(type);
+			return new ConfigList(config, type);
 		}
-		return new ConfigCategory(type);
+		return new ConfigCategory(config, type);
 	}
 
 	boolean isConfigTypeEqual(Type type) {

@@ -14,8 +14,8 @@ class ConfigList extends ConfigElement {
 
 	final List<ConfigElement> list = new ArrayList<>();
 
-	ConfigList(DefaultSupplier<Type> type) {
-		super(type);
+	ConfigList(Config config, DefaultSupplier<Type> type) {
+		super(config, type);
 		if (!ConfigUtil.isList(this.type.getOrDefault())) {
 			throw new IllegalArgumentException();
 		}
@@ -27,7 +27,7 @@ class ConfigList extends ConfigElement {
 			throw new IllegalArgumentException();
 		}
 		while (!reader.readLineIfEqual(">")) {
-			ConfigElement element = ConfigElement.create(this.type.map(TypeUtil::getComponentOrElementType));
+			ConfigElement element = ConfigElement.create(this.config, this.type.map(TypeUtil::getComponentOrElementType));
 			element.read(reader);
 			this.list.add(element);
 		}
@@ -59,7 +59,7 @@ class ConfigList extends ConfigElement {
 			Type componentType = TypeUtil.getComponentType(type);
 
 			for (int i = 0; i < Array.getLength(instance); i++) {
-				ConfigElement element = ConfigElement.create(componentType);
+				ConfigElement element = ConfigElement.create(this.config, componentType);
 				element.saveToConfig(componentType, Array.get(instance, i));
 				this.list.add(element);
 			}
@@ -69,7 +69,7 @@ class ConfigList extends ConfigElement {
 			Type elementType = TypeUtil.getElementType(type);
 
 			for (Object value : (Collection<?>) instance) {
-				ConfigElement element = ConfigElement.create(elementType);
+				ConfigElement element = ConfigElement.create(this.config, elementType);
 				element.saveToConfig(elementType, value);
 				this.list.add(element);
 			}

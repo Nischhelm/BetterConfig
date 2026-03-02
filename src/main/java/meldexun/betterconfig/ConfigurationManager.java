@@ -13,7 +13,6 @@ import com.google.common.collect.Multimap;
 
 import meldexun.betterconfig.api.BetterConfig;
 import meldexun.betterconfig.gui.EntryInfo;
-import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.common.FMLLog;
@@ -25,10 +24,10 @@ import net.minecraftforge.fml.common.discovery.ASMDataTable.ASMData;
 @SuppressWarnings("unchecked")
 public class ConfigurationManager {
 
-	private static final Map<File, ConfigCategory> BETTER_CONFIGS = new HashMap<>();
+	private static final Map<File, Config> BETTER_CONFIGS = new HashMap<>();
 	private static final Multimap<File, String> LOADED_CATEGORIES = HashMultimap.create();
 
-	private static final Map<String, Multimap<Config.Type, ASMData>> asm_data;
+	private static final Map<String, Multimap<net.minecraftforge.common.config.Config.Type, ASMData>> asm_data;
 	private static final Map<String, Set<Class<?>>> MOD_CONFIG_CLASSES;
 	private static final Map<String, Configuration> CONFIGS;
 	private static final Method sync;
@@ -38,7 +37,7 @@ public class ConfigurationManager {
 
 			f = ConfigManager.class.getDeclaredField("asm_data");
 			f.setAccessible(true);
-			asm_data = (Map<String, Multimap<Config.Type, ASMData>>) f.get(null);
+			asm_data = (Map<String, Multimap<net.minecraftforge.common.config.Config.Type, ASMData>>) f.get(null);
 
 			f = ConfigManager.class.getDeclaredField("MOD_CONFIG_CLASSES");
 			f.setAccessible(true);
@@ -55,11 +54,11 @@ public class ConfigurationManager {
 		}
 	}
 
-	public static void sync(String modid, Config.Type type) {
+	public static void sync(String modid, net.minecraftforge.common.config.Config.Type type) {
 		FMLLog.log.debug("Attempting to inject @Config classes into {} for type {}", modid, type);
 		ClassLoader mcl = Loader.instance().getModClassLoader();
 		File configDir = Loader.instance().getConfigDir();
-		Multimap<Config.Type, ASMData> map = asm_data.get(modid);
+		Multimap<net.minecraftforge.common.config.Config.Type, ASMData> map = asm_data.get(modid);
 
 		if (map == null)
 			return;
@@ -80,12 +79,12 @@ public class ConfigurationManager {
 				File file = new File(configDir, name + ".cfg");
 
 				if (cls.isAnnotationPresent(BetterConfig.class)) {
-					ConfigCategory cfg = BETTER_CONFIGS.get(file);
+					Config cfg = BETTER_CONFIGS.get(file);
 					if (cfg == null) {
-						BETTER_CONFIGS.put(file, cfg = ConfigurationLoader.load(file));
+						BETTER_CONFIGS.put(file, cfg = ConfigurationLoader.load(file, cls));
 					}
 
-					ConfigCategory categoryElement = !category.isEmpty() ? getOrCreateCategory(cfg, category) : cfg;
+					ConfigCategory categoryElement = !category.isEmpty() ? getOrCreateCategory(cfg, category) : cfg.root;
 					if (LOADED_CATEGORIES.put(file, category)) {
 						EntryInfo.load(cls, null);
 						categoryElement.loadFromConfig(cls, null);
@@ -112,8 +111,8 @@ public class ConfigurationManager {
 		}
 	}
 
-	private static ConfigCategory getOrCreateCategory(ConfigCategory cfg, String name) {
-		return cfg.subcategories.computeIfAbsent(name, k -> new ConfigCategory(DefaultSupplier.fallback(Map.class)));
+	private static ConfigCategory getOrCreateCategory(Config cfg, String name) {
+		return cfg.root.subcategories.computeIfAbsent(name, k -> new ConfigCategory(cfg, DefaultSupplier.fallback(Map.class)));
 	}
 
 }

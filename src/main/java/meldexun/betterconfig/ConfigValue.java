@@ -10,8 +10,8 @@ class ConfigValue extends ConfigElement {
 
 	String value;
 
-	ConfigValue(DefaultSupplier<Type> type) {
-		super(type);
+	ConfigValue(Config config, DefaultSupplier<Type> type) {
+		super(config, type);
 		if (!ConfigUtil.isValue(this.type.getOrDefault())) {
 			throw new IllegalArgumentException();
 		}

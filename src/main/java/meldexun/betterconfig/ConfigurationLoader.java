@@ -2,41 +2,15 @@ package meldexun.betterconfig;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Map;
-import java.util.regex.Matcher;
-
-import org.apache.commons.lang3.ObjectUtils;
 
 public class ConfigurationLoader {
 
-	public static ConfigCategory load(File file) throws IOException {
-		ConfigCategory cfg = new ConfigCategory(DefaultSupplier.fallback(Map.class));
-		if (file.exists()) {
-			try (ConfigReader reader = new ConfigReader(Files.newBufferedReader(file.toPath()))) {
-				while (reader.hasNext()) {
-					Matcher matcher;
-					if ((matcher = reader.readMatching(ConfigCategory.CATEGORY)) != null) {
-						String name = ObjectUtils.defaultIfNull(matcher.group(1), matcher.group(2));
-						ConfigCategory subcategory = new ConfigCategory(DefaultSupplier.fallback(Map.class));
-						subcategory.read(reader);
-						cfg.subcategories.put(name, subcategory);
-					} else {
-						throw new IllegalArgumentException();
-					}
-				}
-			}
-		}
-		return cfg;
+	public static Config load(File file, Class<?> type) throws IOException {
+		return new Config(file.toPath(), type);
 	}
 
-	public static void save(ConfigCategory cfg, File file) throws IOException {
-		try (ConfigWriter writer = new ConfigWriter(Files.newBufferedWriter(file.toPath()))) {
-			for (Map.Entry<String, ConfigCategory> entry : cfg.subcategoriesSorted()) {
-				ConfigCategory.writeEntry(writer, entry.getKey(), entry.getValue());
-				writer.newLine();
-			}
-		}
+	public static void save(Config cfg, File file) throws IOException {
+		cfg.save(file.toPath());
 	}
 
 }

@@ -18,7 +18,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
 import meldexun.betterconfig.api.Order;
-import net.minecraftforge.common.config.Config;
 
 class ConfigCategory extends ConfigElement {
 
@@ -36,8 +35,8 @@ class ConfigCategory extends ConfigElement {
 	final Map<String, ConfigCategory> subcategories = new LinkedHashMap<>();
 	final Map<String, ConfigElement> elements = new LinkedHashMap<>();
 
-	ConfigCategory(DefaultSupplier<Type> type) {
-		super(type);
+	ConfigCategory(Config config, DefaultSupplier<Type> type) {
+		super(config, type);
 		if (!ConfigUtil.isCategory(this.type.getOrDefault())) {
 			throw new IllegalArgumentException();
 		}
@@ -73,13 +72,13 @@ class ConfigCategory extends ConfigElement {
 			Matcher matcher;
 			if ((matcher = reader.readMatching(VALUE)) != null) {
 				name = ObjectUtils.defaultIfNull(matcher.group(2), matcher.group(3));
-				element = new ConfigValue(DefaultSupplier.fallback(parseValueType(matcher.group(1))));
+				element = new ConfigValue(this.config, DefaultSupplier.fallback(parseValueType(matcher.group(1))));
 			} else if ((matcher = reader.readMatching(LIST)) != null) {
 				name = ObjectUtils.defaultIfNull(matcher.group(2), matcher.group(3));
-				element = new ConfigList(DefaultSupplier.fallback(parseListType(matcher.group(1))));
+				element = new ConfigList(this.config, DefaultSupplier.fallback(parseListType(matcher.group(1))));
 			} else if ((matcher = reader.readMatching(CATEGORY)) != null) {
 				name = ObjectUtils.defaultIfNull(matcher.group(1), matcher.group(2));
-				element = new ConfigCategory(DefaultSupplier.fallback(Map.class));
+				element = new ConfigCategory(this.config, DefaultSupplier.fallback(Map.class));
 			} else {
 				throw new IllegalArgumentException(reader.peekLine());
 			}
@@ -246,7 +245,7 @@ class ConfigCategory extends ConfigElement {
 
 			((Map<?, ?>) instance).forEach((k, v) -> {
 				String name = keyAdapter.serialize(k);
-				ConfigElement element = ConfigElement.create(valueType);
+				ConfigElement element = ConfigElement.create(this.config, valueType);
 				if (element instanceof ConfigCategory) {
 					this.subcategories.put(name, (ConfigCategory) element);
 				} else {
@@ -256,12 +255,12 @@ class ConfigCategory extends ConfigElement {
 			});
 		} else {
 			for (Field field : ConfigUtil.getConfigFields(type, instance == null)) {
-				String name = field.isAnnotationPresent(Config.Name.class) ? field.getAnnotation(Config.Name.class).value() : field.getName();
+				String name = field.isAnnotationPresent(net.minecraftforge.common.config.Config.Name.class) ? field.getAnnotation(net.minecraftforge.common.config.Config.Name.class).value() : field.getName();
 				ConfigElement element;
 				if (ConfigUtil.isCategory(field.getGenericType())) {
-					element = this.subcategories.computeIfAbsent(name, k -> new ConfigCategory(DefaultSupplier.of(field.getGenericType())));
+					element = this.subcategories.computeIfAbsent(name, k -> new ConfigCategory(this.config, DefaultSupplier.of(field.getGenericType())));
 				} else {
-					element = this.elements.compute(name, (k, v) -> v != null && v.isConfigTypeEqual(field.getGenericType()) ? v : ConfigElement.create(field.getGenericType()));
+					element = this.elements.compute(name, (k, v) -> v != null && v.isConfigTypeEqual(field.getGenericType()) ? v : ConfigElement.create(this.config, field.getGenericType()));
 				}
 				try {
 					element.saveToConfig(field.getGenericType(), field.get(instance));
@@ -307,7 +306,7 @@ class ConfigCategory extends ConfigElement {
 			return map;
 		} else {
 			for (Field field : ConfigUtil.getConfigFields(type, instance == null)) {
-				String name = field.isAnnotationPresent(Config.Name.class) ? field.getAnnotation(Config.Name.class).value() : field.getName();
+				String name = field.isAnnotationPresent(net.minecraftforge.common.config.Config.Name.class) ? field.getAnnotation(net.minecraftforge.common.config.Config.Name.class).value() : field.getName();
 				ConfigElement element = (ConfigUtil.isCategory(field.getGenericType()) ? this.subcategories : this.elements).get(name);
 				if (element != null && element.isConfigTypeEqual(field.getGenericType())) {
 					try {

@@ -4,7 +4,6 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
 import meldexun.betterconfig.TypeAdapters;
@@ -88,7 +87,7 @@ public class DummyConfigElement implements IConfigElement {
 
 	@Override
 	public String getComment() {
-		return this.info.hasComment() ? StringUtils.join(this.info.comment(), "\n") : null;
+		return this.info.hasComment() ? this.info.comment() : null;
 	}
 
 	@Override

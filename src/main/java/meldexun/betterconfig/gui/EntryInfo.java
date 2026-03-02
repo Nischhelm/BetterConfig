@@ -8,6 +8,8 @@ import java.util.WeakHashMap;
 
 import javax.annotation.Nullable;
 
+import org.apache.commons.lang3.StringUtils;
+
 import meldexun.betterconfig.TypeUtil;
 import meldexun.betterconfig.api.Order;
 import meldexun.betterconfig.api.RangeLong;
@@ -19,7 +21,9 @@ public interface EntryInfo {
 
 	String name();
 
-	boolean hasLangKey();
+	default boolean hasLangKey() {
+		return !StringUtils.isBlank(langKey());
+	}
 
 	String langKey();
 
@@ -27,9 +31,11 @@ public interface EntryInfo {
 		return hasLangKey() && I18n.hasKey(langKey()) ? I18n.format(langKey()) : name();
 	}
 
-	boolean hasComment();
+	default boolean hasComment() {
+		return !StringUtils.isBlank(comment());
+	}
 
-	String[] comment();
+	String comment();
 
 	boolean hasLongRange();
 
@@ -47,7 +53,9 @@ public interface EntryInfo {
 
 	boolean modifiable();
 
-	boolean hasDefaultValue();
+	default boolean hasDefaultValue() {
+		return defaultValue() != null;
+	}
 
 	Object defaultValue();
 
@@ -61,7 +69,7 @@ public interface EntryInfo {
 
 		private final String name;
 		private String langKey;
-		private String[] comment;
+		private String comment;
 		private boolean hasLongRange;
 		private long minLong = Long.MIN_VALUE;
 		private long maxLong = Long.MAX_VALUE;
@@ -84,7 +92,7 @@ public interface EntryInfo {
 		}
 
 		public void setComment(String[] comment) {
-			this.comment = comment;
+			this.comment = StringUtils.join(comment, '\n');
 		}
 
 		public void setLongRange(long min, long max) {
@@ -126,7 +134,7 @@ public interface EntryInfo {
 		public EntryInfo build() {
 			String name = this.name;
 			String langKey = this.langKey;
-			String[] comment = this.comment;
+			String comment = this.comment;
 			boolean hasLongRange = this.hasLongRange;
 			long minLong = this.minLong;
 			long maxLong = this.maxLong;
@@ -146,22 +154,12 @@ public interface EntryInfo {
 				}
 
 				@Override
-				public boolean hasLangKey() {
-					return langKey != null;
-				}
-
-				@Override
 				public String langKey() {
 					return langKey;
 				}
 
 				@Override
-				public boolean hasComment() {
-					return comment != null;
-				}
-
-				@Override
-				public String[] comment() {
+				public String comment() {
 					return comment;
 				}
 
@@ -203,11 +201,6 @@ public interface EntryInfo {
 				@Override
 				public boolean modifiable() {
 					return modifiable;
-				}
-
-				@Override
-				public boolean hasDefaultValue() {
-					return defaultValue != null;
 				}
 
 				@Override

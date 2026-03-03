@@ -11,4 +11,6 @@ public @interface BetterConfig {
 
 	boolean lowerCaseCategories() default true;
 
+	boolean bigCategoryComments() default true;
+
 }

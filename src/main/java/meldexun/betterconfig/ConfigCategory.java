@@ -163,13 +163,19 @@ class ConfigCategory extends ConfigElement {
 		if (info != null) {
 			if (element instanceof ConfigCategory) {
 				if (info.hasComment()) {
-					writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
-					writer.writeCommentLine(name);
-					writer.write('#').write('-', CATEGORY_COMMENT_LENGTH - 2).write('#').newLine();
+					if (element.config.settings.bigCategoryComments()) {
+						writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
+						writer.writeCommentLine(name);
+						writer.write('#').write('-', CATEGORY_COMMENT_LENGTH - 2).write('#').newLine();
+					}
+
 					for (String commentLine : info.comment().split("\r?\n")) {
 						writer.writeCommentLine(commentLine);
 					}
-					writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
+
+					if (element.config.settings.bigCategoryComments()) {
+						writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
+					}
 				}
 			} else {
 				if (info.hasComment()) {

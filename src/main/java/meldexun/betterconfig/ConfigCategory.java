@@ -183,6 +183,26 @@ class ConfigCategory extends ConfigElement {
 						writer.writeCommentLine(commentLine);
 					}
 				}
+
+				boolean writeRange = element.config.settings.addRangesToComments() && (info.hasLongRange() || info.hasDoubleRange());
+				boolean writeDefault = element.config.settings.addDefaultsToComments() && info.hasDefaultValue();
+				if (writeRange || writeDefault) {
+					writer.startComment();
+					if (writeRange) {
+						writer.write("Min: ");
+						writer.write(info.hasLongRange() ? Long.toString(info.minLong()) : Double.toString(info.minDouble()));
+						writer.write(" Max: ");
+						writer.write(info.hasLongRange() ? Long.toString(info.maxLong()) : Double.toString(info.maxDouble()));
+					}
+					if (writeDefault) {
+						if (writeRange) {
+							writer.write(' ');
+						}
+						writer.write("Default: ");
+						writer.write(TypeUtil.toString(element.type.get(), info.defaultValue()));
+					}
+					writer.newLine();
+				}
 			}
 		}
 

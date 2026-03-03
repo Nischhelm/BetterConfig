@@ -13,4 +13,8 @@ public @interface BetterConfig {
 
 	boolean bigCategoryComments() default true;
 
+	boolean addRangesToComments() default true;
+
+	boolean addDefaultsToComments() default true;
+
 }

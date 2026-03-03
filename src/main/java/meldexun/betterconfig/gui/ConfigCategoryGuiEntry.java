@@ -145,7 +145,7 @@ public class ConfigCategoryGuiEntry extends ListEntryBase implements IGuiListEnt
 
 	@Override
 	public String getName() {
-		return this.info.name();
+		return this.info.guiName();
 	}
 
 	@Override

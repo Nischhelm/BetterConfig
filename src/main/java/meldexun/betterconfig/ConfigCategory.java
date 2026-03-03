@@ -32,6 +32,7 @@ class ConfigCategory extends ConfigElement {
 	static final Pattern VALUE = Pattern.compile(String.format("%s:%s=", VALUE_TYPE, NAME));
 	static final Comparator<Map.Entry<String, ? extends ConfigElement>> CATEGORY_ORDER = Comparator.comparingInt(e -> e.getValue().info() != null ? e.getValue().info().order() : 0);
 	static final Comparator<Map.Entry<String, ? extends ConfigElement>> ELEMENT_ORDER = CATEGORY_ORDER.thenComparing(Map.Entry::getKey);
+	static final int CATEGORY_COMMENT_LENGTH = 106;
 	final Map<String, ConfigCategory> subcategories = new LinkedHashMap<>();
 	final Map<String, ConfigElement> elements = new LinkedHashMap<>();
 
@@ -158,6 +159,27 @@ class ConfigCategory extends ConfigElement {
 	}
 
 	static void writeEntry(ConfigWriter writer, String name, ConfigElement element) throws IOException {
+		EntryInfo info = element.info();
+		if (info != null) {
+			if (element instanceof ConfigCategory) {
+				if (info.hasComment()) {
+					writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
+					writer.writeCommentLine(name);
+					writer.write('#').write('-', CATEGORY_COMMENT_LENGTH - 2).write('#').newLine();
+					for (String commentLine : info.comment().split("\r?\n")) {
+						writer.writeCommentLine(commentLine);
+					}
+					writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
+				}
+			} else {
+				if (info.hasComment()) {
+					for (String commentLine : info.comment().split("\r?\n")) {
+						writer.writeCommentLine(commentLine);
+					}
+				}
+			}
+		}
+
 		if (element instanceof ConfigValue) {
 			writer.write(serializeType((ConfigValue) element));
 			writer.write(':');

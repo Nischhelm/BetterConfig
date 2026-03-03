@@ -42,6 +42,8 @@ class Config {
 
 	void save(Path file) throws IOException {
 		try (ConfigWriter writer = new ConfigWriter(Files.newBufferedWriter(file))) {
+			writer.writeCommentLine("Configuration file");
+			writer.newLine();
 			for (Map.Entry<String, ConfigCategory> entry : this.root.subcategoriesSorted()) {
 				ConfigCategory.writeEntry(writer, entry.getKey(), entry.getValue());
 				writer.newLine();

@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
 import meldexun.betterconfig.gui.EntryInfo;
@@ -33,6 +34,8 @@ class ConfigCategory extends ConfigElement {
 	static final Comparator<Map.Entry<String, ? extends ConfigElement>> CATEGORY_ORDER = Comparator.comparingInt(e -> e.getValue().info() != null ? e.getValue().info().order() : 0);
 	static final Comparator<Map.Entry<String, ? extends ConfigElement>> ELEMENT_ORDER = CATEGORY_ORDER.thenComparing(Map.Entry::getKey);
 	static final int CATEGORY_COMMENT_LENGTH = 106;
+	static final String CATEGORY_COMMENT_BORDER = StringUtils.repeat('#', CATEGORY_COMMENT_LENGTH);
+	static final String CATEGORY_COMMENT_SEPARATOR = '#' + StringUtils.repeat('-', CATEGORY_COMMENT_LENGTH - 2) + '#';
 	final Map<String, ConfigCategory> subcategories = new LinkedHashMap<>();
 	final Map<String, ConfigElement> elements = new LinkedHashMap<>();
 
@@ -159,14 +162,15 @@ class ConfigCategory extends ConfigElement {
 	}
 
 	static void writeEntry(ConfigWriter writer, String name, ConfigElement element) throws IOException {
+		// write comment
 		EntryInfo info = element.info();
 		if (info != null) {
 			if (element instanceof ConfigCategory) {
 				if (info.hasComment()) {
 					if (element.config.settings.bigCategoryComments()) {
-						writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
+						writer.writeLine(CATEGORY_COMMENT_BORDER);
 						writer.writeCommentLine(name);
-						writer.write('#').write('-', CATEGORY_COMMENT_LENGTH - 2).write('#').newLine();
+						writer.writeLine(CATEGORY_COMMENT_SEPARATOR);
 					}
 
 					for (String commentLine : info.comment().split("\r?\n")) {
@@ -174,7 +178,7 @@ class ConfigCategory extends ConfigElement {
 					}
 
 					if (element.config.settings.bigCategoryComments()) {
-						writer.writeLine('#', CATEGORY_COMMENT_LENGTH);
+						writer.writeLine(CATEGORY_COMMENT_BORDER);
 					}
 				}
 			} else {
@@ -208,6 +212,7 @@ class ConfigCategory extends ConfigElement {
 			writer.writeCommentLine("~DEPRECATED~");
 		}
 
+		// write type and name
 		if (element instanceof ConfigValue) {
 			writer.write(serializeType((ConfigValue) element));
 			writer.write(':');
@@ -224,6 +229,8 @@ class ConfigCategory extends ConfigElement {
 		} else {
 			throw new IllegalArgumentException();
 		}
+
+		// write value
 		element.write(writer);
 	}
 
@@ -278,10 +285,7 @@ class ConfigCategory extends ConfigElement {
 
 		if (!TypeUtil.isMap(type)) {
 			for (Field field : ConfigUtil.getConfigFields(type, instance == null)) {
-				String name = field.isAnnotationPresent(net.minecraftforge.common.config.Config.Name.class) ? field.getAnnotation(net.minecraftforge.common.config.Config.Name.class).value() : field.getName();
-				if (this.config.settings.lowerCaseCategories()) {
-					name = name.toLowerCase();
-				}
+				String name = this.config.name(instance, field);
 				ConfigElement element;
 				if (ConfigUtil.isCategory(field.getGenericType())) {
 					element = this.subcategories.computeIfAbsent(name, k -> new ConfigCategory(this.config, DefaultSupplier.of(field.getGenericType())));
@@ -335,10 +339,7 @@ class ConfigCategory extends ConfigElement {
 			});
 		} else {
 			for (Field field : ConfigUtil.getConfigFields(type, instance == null)) {
-				String name = field.isAnnotationPresent(net.minecraftforge.common.config.Config.Name.class) ? field.getAnnotation(net.minecraftforge.common.config.Config.Name.class).value() : field.getName();
-				if (this.config.settings.lowerCaseCategories()) {
-					name = name.toLowerCase();
-				}
+				String name = this.config.name(instance, field);
 				ConfigElement element;
 				if (ConfigUtil.isCategory(field.getGenericType())) {
 					element = this.subcategories.computeIfAbsent(name, k -> new ConfigCategory(this.config, DefaultSupplier.of(field.getGenericType())));
@@ -386,10 +387,7 @@ class ConfigCategory extends ConfigElement {
 			return map;
 		} else {
 			for (Field field : ConfigUtil.getConfigFields(type, instance == null)) {
-				String name = field.isAnnotationPresent(net.minecraftforge.common.config.Config.Name.class) ? field.getAnnotation(net.minecraftforge.common.config.Config.Name.class).value() : field.getName();
-				if (this.config.settings.lowerCaseCategories()) {
-					name = name.toLowerCase();
-				}
+				String name = this.config.name(instance, field);
 				ConfigElement element = (ConfigUtil.isCategory(field.getGenericType()) ? this.subcategories : this.elements).get(name);
 				if (element != null && element.isConfigTypeEqual(field.getGenericType())) {
 					try {

@@ -4,7 +4,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -12,11 +11,10 @@ import javax.annotation.Nullable;
 
 import meldexun.betterconfig.ConfigUtil;
 import meldexun.betterconfig.ConfigurationManager;
+import meldexun.betterconfig.OrderUtil;
 import meldexun.betterconfig.api.BetterConfig;
-import meldexun.betterconfig.api.Order;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraftforge.common.config.Config;
 import net.minecraftforge.fml.client.config.GuiConfig;
 import net.minecraftforge.fml.client.config.GuiConfigEntries;
 
@@ -94,9 +92,7 @@ public class ConfigCategoryGui extends GuiConfig implements TitledGui, ConfigGui
 		public Entries(Type type, @Nullable Object instance) {
 			super(ConfigCategoryGui.this, Minecraft.getMinecraft());
 			Arrays.stream(ConfigUtil.getConfigFields(type, instance == null))
-					.sorted(Comparator.comparing(Field::getGenericType, Comparator.comparing(ConfigUtil::isNonMapCategory).reversed())
-							.thenComparingInt(f -> f.isAnnotationPresent(Order.class) ? f.getAnnotation(Order.class).value() : 0)
-							.thenComparing(f -> f.isAnnotationPresent(Config.Name.class) ? f.getAnnotation(Config.Name.class).value() : f.getName()))
+					.sorted(OrderUtil.buildComparator(ConfigCategoryGui.this.settings().elementOrder(), type, f -> EntryInfo.fromField(instance, f).name(), Field::getGenericType, f -> EntryInfo.fromField(instance, f).order()))
 					.forEach(field -> {
 						this.listEntries.add(this.create(instance, field));
 					});

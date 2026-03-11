@@ -59,6 +59,11 @@ class Config {
 		public boolean removeDeprecatedEntries() {
 			return false;
 		}
+
+		@Override
+		public ConfigComparator[] elementOrder() {
+			return null;
+		}
 	};
 	private final ConfigCategory root = new ConfigCategory(DefaultSupplier.fallback(Map.class));
 
@@ -86,7 +91,8 @@ class Config {
 		try (ConfigWriter writer = new ConfigWriter(Files.newBufferedWriter(file))) {
 			writer.writeCommentLine("Configuration file");
 			writer.newLine();
-			for (Map.Entry<String, ? extends ConfigElement> entry : this.root.subcategoriesSorted()) {
+			BetterConfig rootSettings = ObjectUtils.defaultIfNull(getCategorySettings.apply(""), DEFAULT_SETTINGS);
+			for (Map.Entry<String, ? extends ConfigElement> entry : this.root.elements(rootSettings.elementOrder())) {
 				BetterConfig settings = ObjectUtils.defaultIfNull(getCategorySettings.apply(entry.getKey()), DEFAULT_SETTINGS);
 				ConfigCategory.writeEntry(writer, settings, entry.getKey(), entry.getValue());
 				writer.newLine();

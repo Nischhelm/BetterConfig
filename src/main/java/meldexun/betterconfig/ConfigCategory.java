@@ -5,7 +5,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.TypeUtils;
 
 import meldexun.betterconfig.api.BetterConfig;
+import meldexun.betterconfig.api.BetterConfig.ConfigComparator;
 import meldexun.betterconfig.gui.EntryInfo;
 import net.minecraftforge.common.config.Config;
 
@@ -34,8 +34,6 @@ class ConfigCategory extends ConfigElement {
 	static final Pattern CATEGORY = Pattern.compile(String.format("%s\\s*(?=\\{)", NAME));
 	static final Pattern LIST = Pattern.compile(String.format("%s:%s\\s*(?=<)", LIST_TYPE, NAME));
 	static final Pattern VALUE = Pattern.compile(String.format("%s:%s=", VALUE_TYPE, NAME));
-	static final Comparator<Map.Entry<String, ? extends ConfigElement>> CATEGORY_ORDER = Comparator.comparingInt(e -> e.getValue().info() != null ? e.getValue().info().order() : 0);
-	static final Comparator<Map.Entry<String, ? extends ConfigElement>> ELEMENT_ORDER = CATEGORY_ORDER.thenComparing(Map.Entry::getKey);
 	static final int CATEGORY_COMMENT_LENGTH = 106;
 	static final String CATEGORY_COMMENT_BORDER = StringUtils.repeat('#', CATEGORY_COMMENT_LENGTH);
 	static final String CATEGORY_COMMENT_SEPARATOR = '#' + StringUtils.repeat('-', CATEGORY_COMMENT_LENGTH - 2) + '#';
@@ -49,18 +47,12 @@ class ConfigCategory extends ConfigElement {
 		}
 	}
 
-	List<Map.Entry<String, ConfigCategory>> subcategoriesSorted() {
-		List<Map.Entry<String, ConfigCategory>> list = new ArrayList<>(this.subcategories.entrySet());
-		if (!TypeUtil.isMap(this.type.getOrDefault())) {
-			list.sort(CATEGORY_ORDER);
-		}
-		return list;
-	}
-
-	List<Map.Entry<String, ConfigElement>> elementsSorted() {
-		List<Map.Entry<String, ConfigElement>> list = new ArrayList<>(this.elements.entrySet());
-		if (!TypeUtil.isMap(this.type.getOrDefault())) {
-			list.sort(ELEMENT_ORDER);
+	List<Map.Entry<String, ? extends ConfigElement>> elements(ConfigComparator... order) {
+		List<Map.Entry<String, ? extends ConfigElement>> list = new ArrayList<>();
+		list.addAll(this.subcategories.entrySet());
+		list.addAll(this.elements.entrySet());
+		if (ConfigUtil.isNonMapCategory(this.type.getOrDefault())) {
+			list.sort(OrderUtil.buildComparator(order, this.type.getOrDefault(), Map.Entry::getKey, e -> e.getValue().type.getOrDefault(), e -> e.getValue().info() != null ? e.getValue().info().order() : 0));
 		}
 		return list;
 	}
@@ -150,11 +142,7 @@ class ConfigCategory extends ConfigElement {
 	void write(ConfigWriter writer, BetterConfig settings) throws IOException {
 		writer.writeLine('{');
 		writer.incrementIndentation();
-		writer.write(this.elementsSorted(), (writer1, entry) -> {
-			writeEntry(writer1, settings, entry.getKey(), entry.getValue());
-			writer1.newLine();
-		});
-		writer.write(this.subcategoriesSorted(), (writer1, entry) -> {
+		writer.write(this.elements(settings.elementOrder()), (writer1, entry) -> {
 			writeEntry(writer1, settings, entry.getKey(), entry.getValue());
 			writer1.newLine();
 		});

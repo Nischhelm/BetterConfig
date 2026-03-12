@@ -68,6 +68,10 @@ public class ConfigurationGuiFactory implements IModGuiFactory {
         }
     }
 
+    private static final Set<String> excludedModids = new HashSet<>();
+    public static void excludeModId(String modid) {
+        excludedModids.add(modid);
+    }
     private static final Map<String, Map<String, Configuration>> registeredConfigurations = new HashMap<>();
     public static boolean hasGuiFor(String modid) {
         boolean hasGui = registeredConfigurations.containsKey(modid);
@@ -75,6 +79,7 @@ public class ConfigurationGuiFactory implements IModGuiFactory {
         return hasGui;
     }
     public static void registerConfiguration(String modid, String configName, Configuration cfg){
+        if(excludedModids.contains(modid)) return;
         registeredConfigurations.computeIfAbsent(modid, m -> new HashMap<>()).put(configName == null ? "general" : configName, cfg);
     }
     public static void registerConfiguration(String modid, String configName, String cfgLocation){

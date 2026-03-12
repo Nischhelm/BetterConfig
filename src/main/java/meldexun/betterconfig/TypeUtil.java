@@ -38,8 +38,8 @@ public class TypeUtil {
 		if (isArray(type)) {
 			return Array.newInstance(getRawType(getComponentType(type)), 0);
 		}
-		if (isEnum(type)) {
-			return null;
+		if (TypeAdapters.hasAdapter(type)) {
+			return TypeAdapters.get(type).defaultValue();
 		}
 		if (instance != null) {
 			try {
@@ -48,33 +48,8 @@ public class TypeUtil {
 				// ignore
 			}
 		}
-		Class<?> rawType = getRawType(type);
-		if (rawType == boolean.class || rawType == Boolean.class) {
-			return false;
-		}
-		if (rawType == byte.class || rawType == Byte.class) {
-			return (byte) 0;
-		}
-		if (rawType == short.class || rawType == Short.class) {
-			return (short) 0;
-		}
-		if (rawType == int.class || rawType == Integer.class) {
-			return (int) 0;
-		}
-		if (rawType == long.class || rawType == Long.class) {
-			return (long) 0;
-		}
-		if (rawType == float.class || rawType == Float.class) {
-			return (float) 0.0F;
-		}
-		if (rawType == double.class || rawType == Double.class) {
-			return (double) 0.0D;
-		}
-		if (rawType == char.class || rawType == Character.class) {
-			return (char) 0;
-		}
 		try {
-			return rawType.newInstance();
+			return getRawType(type).newInstance();
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new UnsupportedOperationException(e);
 		}

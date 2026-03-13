@@ -18,10 +18,11 @@ public class ConfigurationGuiRegistry {
 		if (!BetterConfigPlugin.coreModInitiationComplete) {
 			return;
 		}
-		String modid = getCurrentModId();
-		if (modid.isEmpty()) {
-			return; // if there should ever be an edge case with no active container or no modid
+		ModContainer modContainer = Loader.instance().activeModContainer();
+		if (modContainer == null) {
+			return;
 		}
+		String modid = modContainer.getModId();
 		if (ConfigManager.hasConfigForMod(modid)) {
 			return;
 		}
@@ -47,11 +48,4 @@ public class ConfigurationGuiRegistry {
 		registeredConfigurations.remove(modId);
 	}
 
-	public static String getCurrentModId() {
-		ModContainer modContainer = Loader.instance().activeModContainer();
-		if (modContainer == null) {
-			return "";
-		}
-		return modContainer.getModId();
-	}
 }

@@ -40,19 +40,22 @@ public class ConfigurationGuiFactory implements IModGuiFactory {
 							.map(ConfigElement::new)
 							.collect(Collectors.toList());
 
-					if (categoriesInFile.size() == 1 && !categoriesInFile.get(0).isProperty()) {
-						categoriesInFile = categoriesInFile.get(0).getChildElements(); // skip step when having only a single category option in the GUI
-					}
+					categoriesInFile = unwrapSingleCategory(categoriesInFile); // skip step when having only a single category option in the GUI
 
 					return new DummyCategoryElement(cfgFileName, cfgFileName, categoriesInFile); // each file gets its own category, might be multiple per modid
 				})
 				.collect(Collectors.toList());
 
-		if (fileCategories.size() == 1) {
-			fileCategories = fileCategories.get(0).getChildElements(); // skip the file selection if there's only one file
-		}
+		fileCategories = unwrapSingleCategory(fileCategories); //skip file select step if only one file
 
 		return fileCategories;
+	}
+
+	private static List<IConfigElement> unwrapSingleCategory(List<IConfigElement> elements) {
+		if(elements.size() == 1) {
+			return elements.get(0).getChildElements();
+		}
+		return elements;
 	}
 
 	@Override

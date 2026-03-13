@@ -1,12 +1,17 @@
 package meldexun.betterconfig.asm;
 
+import java.util.MissingResourceException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.MethodVisitor;
+
 import meldexun.asmutil2.AbstractClassTransformer;
 import meldexun.asmutil2.reader.ClassUtil;
 import net.minecraft.launchwrapper.IClassTransformer;
-import org.objectweb.asm.*;
-
-import java.util.MissingResourceException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ConfigurationGuiClassTransformer extends AbstractClassTransformer implements IClassTransformer {
 
@@ -16,7 +21,7 @@ public class ConfigurationGuiClassTransformer extends AbstractClassTransformer i
 		if(transformedName.equals("net.minecraftforge.common.config.ConfigManager")) return null; //forge ConfigManager.sync
 		try {
 			if (ClassUtil.DEFAULT.findInClassHierarchy(name.replace('.', '/'), "net/minecraftforge/common/config/Configuration"::equals) != null) {
-				//TODO: grab these classes extending Configuration differently, prob at tail of their <init>
+				// TODO: grab these classes extending Configuration differently, prob at tail of their <init>
 				return null;
 			}
 		} catch (MissingResourceException e) {
@@ -41,7 +46,10 @@ public class ConfigurationGuiClassTransformer extends AbstractClassTransformer i
 				};
 			}
 		}, 0);
-		if (modified.get()) return writer.toByteArray();
+		if (modified.get()) {
+			return writer.toByteArray();
+		}
 		return null;
 	}
+
 }

@@ -2,8 +2,6 @@ package meldexun.betterconfig.asm;
 
 import java.util.Map;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 
@@ -42,7 +40,7 @@ public class BetterConfigPlugin implements IFMLLoadingPlugin {
 
 	@Override
 	public void injectData(Map<String, Object> data) {
-		coreModInitiationComplete = true; //bit sketchy but mainly want to be done with mixins into Loader
+		coreModInitiationComplete = true; // bit sketchy but mainly want to be done with mixins into Loader
 		MixinBootstrap.init();
 		MixinExtrasBootstrap.init();
 		if (Boolean.FALSE.equals(data.get("runtimeDeobfuscationEnabled"))) {

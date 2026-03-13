@@ -17,9 +17,7 @@
     "hover.HoverCheckerMixin",
     "offset.ConfigButtonYOffsetMixin",
     "offset.GuiSlotMixin",
-    "FMLClientHandlerMixin",
-    "configuration.GuiConfigMixin",
-    "configuration.GuiModListMixin"
+    "FMLClientHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

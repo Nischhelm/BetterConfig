@@ -10,10 +10,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.google.common.collect.BiMap;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import meldexun.betterconfig.ConfigManager;
 import meldexun.betterconfig.gui.ConfigCategoryGui;
+import meldexun.betterconfig.gui.configuration.ConfigurationGuiFactory;
+import meldexun.betterconfig.gui.configuration.ConfigurationGuiRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.fml.client.FMLClientHandler;
@@ -51,6 +54,18 @@ public abstract class FMLClientHandlerMixin implements IModGuiFactory {
 				}
 			});
 		}
+	}
+
+	@ModifyReturnValue(method = "getGuiFactoryFor", remap = false, at = @At(value = "RETURN"))
+	private IModGuiFactory betterConfig_injectConfigurationGui(IModGuiFactory original, ModContainer selectedMod) {
+		if(!ConfigurationGuiRegistry.hasGuiFor(selectedMod.getModId())) {
+			return original;
+		}
+		if(original != null) { //mod got its own factory, no need to keep it registered
+			ConfigurationGuiRegistry.unregister(selectedMod.getModId());
+			return original;
+		}
+		return new ConfigurationGuiFactory(selectedMod.getModId(), selectedMod.getName());
 	}
 
 }

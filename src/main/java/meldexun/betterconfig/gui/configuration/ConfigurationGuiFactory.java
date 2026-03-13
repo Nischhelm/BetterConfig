@@ -1,6 +1,11 @@
 package meldexun.betterconfig.gui.configuration;
 
-import com.google.common.collect.Iterables;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.common.config.ConfigCategory;
@@ -12,109 +17,94 @@ import net.minecraftforge.fml.client.config.IConfigElement;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ModContainer;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public class ConfigurationGuiFactory implements IModGuiFactory {
-    public static final ConfigurationGuiFactory INSTANCE = new ConfigurationGuiFactory();
+
+    private final String modId;
+    private final String modName;
+
+    public ConfigurationGuiFactory(String modId, String modName) {
+        this.modId = modId;
+        this.modName = modName;
+    }
 
     @Override
-    public void initialize(Minecraft mc) {}
+    public void initialize(Minecraft mc) {
+
+    }
 
     @Override
-    public boolean hasConfigGui() { return true; }
+    public boolean hasConfigGui() {
+        return true;
+    }
 
     @Override
     public Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {
         return null;
     }
 
-    private static String currentModId = null;
-
-    public static boolean hasGuiFor(String modid) {
-        boolean hasGui = ConfigurationGuiRegistry.hasGuiFor(modid);
-        if(hasGui) currentModId = modid;
-        return hasGui;
+    @Override
+    public GuiScreen createConfigGui(GuiScreen parent) {
+        return new GuiConfig(parent, getConfigElements(ConfigurationGuiRegistry.get(this.modId)), this.modId, false, false, this.modName);
     }
 
-    @Override public GuiScreen createConfigGui(GuiScreen parent) {
-        return new ConfigurationGui(parent, currentModId, ConfigurationGuiRegistry.get(currentModId));
-    }
-
-    private static Field configCategory$children = null;
-
-    public static class ConfigurationGui extends GuiConfig {
-        public ConfigurationGui(GuiScreen parentScreen, String modid, Map<String, Configuration> cfg) {
-            super(parentScreen, getConfigElements(cfg), modid, false, false, Loader.instance().getIndexedModList().get(modid).getName());
+    private static final Field configCategory_children;
+    static {
+        try {
+            configCategory_children = ConfigCategory.class.getDeclaredField("children");
+            configCategory_children.setAccessible(true);
+        } catch (ReflectiveOperationException e) {
+            throw new UnsupportedOperationException(e);
         }
+    }
 
-        private static List<IConfigElement> getConfigElements(Map<String, Configuration> map) {
-            if(configCategory$children == null) {
-                try {
-                    configCategory$children = ConfigCategory.class.getDeclaredField("children");
-                    configCategory$children.setAccessible(true);
-                } catch (NoSuchFieldException | SecurityException e){
-                    System.err.println("Failed to access field ConfigCategory.children");
-                    return new ArrayList<>();
-                }
-            }
+    @SuppressWarnings("unchecked")
+    private static List<ConfigCategory> getChildCategoryList(ConfigCategory configCategory) {
+        try {
+            return (List<ConfigCategory>) configCategory_children.get(configCategory);
+        } catch (IllegalAccessException e){
+            throw new UnsupportedOperationException(e);
+        }
+    }
 
-            if(map.size() > 1) { //multiple cfg files for this modid
-                List<IConfigElement> elements = new ArrayList<>();
-                for (Map.Entry<String, Configuration> entry : map.entrySet()) {
-                    String cfgFileName = entry.getKey();
-                    Configuration cfg = entry.getValue();
-                    try {
-                        ConfigCategory newCategory = new ConfigCategory(cfgFileName); //each configuration gets its own category, as there are multiple for this modid
-                        @SuppressWarnings("unchecked")
-                        ArrayList<ConfigCategory> newCatChildren = (ArrayList<ConfigCategory>) configCategory$children.get(newCategory);
-
-                        List<ConfigCategory> cfgChildCategories = getCategoriesStream(cfg).collect(Collectors.toList());
-                        if(cfgChildCategories.size() > 1) { //multiple main categories in the file, display a screen to select from them
-                            newCatChildren.addAll(cfgChildCategories); //attach all ConfigCategories of the Configuration to the new parent ConfigCategory
-                        } else if(cfgChildCategories.size() == 1) { //file has only one category, skip right into its contents
-                            //Same effect as just renaming the existing Category from ex "general" to cfgFileName but prob slightly safer
-                            ConfigCategory onlyCategory = cfgChildCategories.get(0);
-                            newCategory.putAll(onlyCategory);
-                            newCatChildren.addAll(onlyCategory.getChildren());
-                        } //don't add if file empty
-                        elements.add(new ConfigElement(newCategory));
-                    } catch (IllegalAccessException | ClassCastException e) {
-                        System.err.println("Failed to access field ConfigCategory.children");
-                    }
-                }
-                return elements;
-            } else { // only one file, skip right into it, no need to display cfgFileName selection
-                Configuration cfg = Iterables.getOnlyElement(map.values()); //config filename doesn't matter if its only one, we skip one category step in the gui
-                if(getRelevantCategoryNames(cfg).count() > 1) { // multiple main categories in the file, display a screen to select from them
-                    return getCategoriesStream(cfg)
-                            .map(cat -> (IConfigElement) new ConfigElement(cat))
+    private static List<IConfigElement> getConfigElements(Map<String, Configuration> map) {
+        List<ConfigCategory> fileCategories = map.entrySet()
+                .stream()
+                .map(e -> {
+                    String cfgFileName = e.getKey();
+                    Configuration cfg = e.getValue();
+                    List<ConfigCategory> categoriesInFile = cfg.getCategoryNames()
+                            .stream()
+                            .map(cfg::getCategory)
+                            .filter(cat -> !cat.isChild()) // cfg stores subcategory names too, so gotta filter those
+                            .filter(cat -> !cat.isEmpty() || !cat.getChildren().isEmpty()) // ignore empty categories
                             .collect(Collectors.toList());
-                } else { // only one category in the file, skip right into it without displaying the category name
-                    return new ConfigElement(cfg.getCategory(getRelevantCategoryNames(cfg).collect(Collectors.toList()).get(0))).getChildElements();
-                }
-            }
+
+                    while(categoriesInFile.size() == 1 && categoriesInFile.get(0).isEmpty()) {
+                        categoriesInFile = getChildCategoryList(categoriesInFile.get(0)); // skip steps with only a single subcategory option in the GUI
+                    }
+
+                    ConfigCategory newCategory = new ConfigCategory(cfgFileName); // each file gets its own category, might be multiple per modid
+                    getChildCategoryList(newCategory).addAll(categoriesInFile); // move the categories of the cfg object to the new category
+                    return newCategory;
+                })
+                .collect(Collectors.toList());
+
+        if (fileCategories.size() == 1) {
+            fileCategories = getChildCategoryList(fileCategories.get(0)); // skip the file selection if there's only one file
         }
 
-        private static Stream<String> getRelevantCategoryNames(Configuration cfg){
-            return cfg.getCategoryNames().stream().filter(name -> !name.contains(".")); //getCategoryNames also returns subcategories, we only want the outermost ones
-        }
-
-        private static Stream<ConfigCategory> getCategoriesStream(Configuration cfg) {
-            return getRelevantCategoryNames(cfg)
-                    .map(cfg::getCategory)
-                    .filter(cat -> !cat.isEmpty() || !cat.getChildren().isEmpty()); // keep only if the category isn't empty
-        }
+        return fileCategories
+                .stream()
+                .map(ConfigElement::new)
+                .collect(Collectors.toList());
     }
 
     public static String getCurrentModId(){
         ModContainer modContainer = Loader.instance().activeModContainer();
-        if(modContainer == null) return "";
+        if(modContainer == null) {
+            return "";
+        }
         return modContainer.getModId();
     }
+
 }

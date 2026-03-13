@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import meldexun.betterconfig.gui.configuration.ConfigurationGuiRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import meldexun.betterconfig.gui.configuration.ConfigurationGuiRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;

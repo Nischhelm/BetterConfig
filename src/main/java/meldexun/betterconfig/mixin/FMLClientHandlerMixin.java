@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.google.common.collect.BiMap;
 import com.llamalad7.mixinextras.sugar.Local;
+
 import meldexun.betterconfig.ConfigManager;
 import meldexun.betterconfig.gui.ConfigCategoryGui;
 import meldexun.betterconfig.gui.configuration.ConfigurationGuiFactory;
@@ -51,9 +52,8 @@ public abstract class FMLClientHandlerMixin implements IModGuiFactory {
 					return null;
 				}
 			});
-		}
-		else if (ConfigurationGuiRegistry.hasGuiFor(modContainer.getModId())) {
-			if(this.guiFactories.containsKey(modContainer)) {
+		} else if (ConfigurationGuiRegistry.hasGuiFor(modContainer.getModId())) {
+			if (this.guiFactories.containsKey(modContainer)) {
 				ConfigurationGuiRegistry.unregister(modContainer.getModId());
 			} else {
 				this.guiFactories.put(modContainer, new ConfigurationGuiFactory(modContainer.getModId(), modContainer.getName()));

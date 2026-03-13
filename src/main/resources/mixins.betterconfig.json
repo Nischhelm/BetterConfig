@@ -18,7 +18,6 @@
     "offset.ConfigButtonYOffsetMixin",
     "offset.GuiSlotMixin",
     "FMLClientHandlerMixin",
-    "configuration.ConfigurationMixin",
     "configuration.GuiConfigMixin",
     "configuration.GuiModListMixin"
   ],

@@ -2,6 +2,8 @@ package meldexun.betterconfig.asm;
 
 import java.util.Map;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 
@@ -15,9 +17,12 @@ import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 @IFMLLoadingPlugin.TransformerExclusions({ "meldexun.betterconfig.asm", "meldexun.asmutil2" })
 public class BetterConfigPlugin implements IFMLLoadingPlugin {
 
+	public static boolean coreModInitiationComplete = false;
+
 	public BetterConfigPlugin() {
 		Launch.classLoader.registerTransformer(BetterConfigClassTransformer.class.getName());
 		Launch.classLoader.registerTransformer(LoadEarlyClassTransformer.class.getName());
+		Launch.classLoader.registerTransformer(ConfigurationGuiClassTransformer.class.getName());
 	}
 
 	@Override
@@ -37,6 +42,7 @@ public class BetterConfigPlugin implements IFMLLoadingPlugin {
 
 	@Override
 	public void injectData(Map<String, Object> data) {
+		coreModInitiationComplete = true; //bit sketchy but mainly want to be done with mixins into Loader
 		MixinBootstrap.init();
 		MixinExtrasBootstrap.init();
 		if (Boolean.FALSE.equals(data.get("runtimeDeobfuscationEnabled"))) {

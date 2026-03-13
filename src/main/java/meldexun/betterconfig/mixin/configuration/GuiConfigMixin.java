@@ -1,6 +1,6 @@
 package meldexun.betterconfig.mixin.configuration;
 
-import meldexun.betterconfig.gui.configuration.ConfigurationGuiFactory;
+import meldexun.betterconfig.gui.configuration.ConfigurationGuiRegistry;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraftforge.fml.client.config.GuiConfig;
 import org.spongepowered.asm.mixin.Final;
@@ -19,6 +19,6 @@ public abstract class GuiConfigMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/common/eventhandler/EventBus;post(Lnet/minecraftforge/fml/common/eventhandler/Event;)Z", ordinal = 1, remap = false)
     )
     private void actionPerformedMixin(GuiButton button, CallbackInfo ci) {
-        ConfigurationGuiFactory.save(modID);
+        ConfigurationGuiRegistry.save(modID);
     }
 }

@@ -25,7 +25,7 @@ class ConfigList extends ConfigElement {
 
 	@Override
 	boolean isDefault() {
-		return this.list.stream().allMatch(ConfigElement::isDefault);
+		return false; // TODO: need to find a good implementation for this
 	}
 
 	@Override

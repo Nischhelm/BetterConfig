@@ -48,8 +48,7 @@ class ConfigCategory extends ConfigElement {
 
 	@Override
 	boolean isDefault() {
-		return this.subcategories.values().stream().allMatch(ConfigElement::isDefault) &&
-				this.elements.values().stream().allMatch(ConfigElement::isDefault);
+		return false; // TODO: need to find a good implementation for this
 	}
 
 	@Override

@@ -21,7 +21,7 @@ class ConfigWriter implements AutoCloseable {
 	<T> ConfigWriter write(Iterable<T> iterable, ThrowingBiPredicate<ConfigWriter, T, IOException> elementWriter, ThrowingConsumer<ConfigWriter, IOException> separatorWriter) throws IOException {
 		Iterator<T> iterator = iterable.iterator();
 		while (iterator.hasNext()) {
-			if (elementWriter.apply(this, iterator.next()) && iterator.hasNext()) {
+			if (elementWriter.test(this, iterator.next()) && iterator.hasNext()) {
 				separatorWriter.accept(this);
 			}
 		}

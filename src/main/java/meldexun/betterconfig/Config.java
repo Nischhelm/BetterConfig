@@ -91,7 +91,7 @@ class Config {
 			BetterConfig rootSettings = ObjectUtils.defaultIfNull(getCategorySettings.apply(""), DEFAULT_SETTINGS);
 			for (Map.Entry<String, ? extends ConfigElement> entry : this.root.elements(rootSettings.elementOrder())) {
 				BetterConfig settings = ObjectUtils.defaultIfNull(getCategorySettings.apply(entry.getKey()), DEFAULT_SETTINGS);
-				ConfigCategory.writeEntry(writer, settings, entry.getKey(), entry.getValue());
+				ConfigCategory.writeEntry(writer, settings, entry.getKey(), entry.getValue(), false);
 				writer.newLine();
 				writer.newLine();
 				writer.newLine();

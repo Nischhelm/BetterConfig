@@ -154,7 +154,7 @@ class ConfigCategory extends ConfigElement {
 		writer.writeLine('{');
 		writer.incrementIndentation();
 		writer.write(this.elements(settings.elementOrder()), (writer1, entry) -> {
-			if (writeEntry(writer1, settings, entry.getKey(), entry.getValue())) {
+			if (writeEntry(writer1, settings, entry.getKey(), entry.getValue(), TypeUtil.isMap(this.type().getOrDefault()) || ConfigUtil.isList(this.type().getOrDefault()))) {
 				writer1.newLine();
 				return true;
 			}
@@ -164,11 +164,11 @@ class ConfigCategory extends ConfigElement {
 		writer.write('}');
 	}
 
-	static boolean writeEntry(ConfigWriter writer, BetterConfig settings, String name, ConfigElement element) throws IOException {
+	static boolean writeEntry(ConfigWriter writer, BetterConfig settings, String name, ConfigElement element, boolean ownedByMapOrList) throws IOException {
 		// write comment
 		ConfigElementMetadata metadata = element.metadata();
 		if (metadata != null) {
-			if (metadata.optional() && element.isDefault()) {
+			if (!ownedByMapOrList && metadata.optional() && element.isDefault()) {
 				return false;
 			}
 

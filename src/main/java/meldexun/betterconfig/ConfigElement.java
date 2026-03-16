@@ -19,8 +19,13 @@ abstract class ConfigElement {
 		return new ConfigCategory();
 	}
 
-	boolean isDefault() {
-		return false;
+	abstract String toString(BetterConfig settings, Type type, @Nullable ConfigElementMetadata metadata, @Nullable Object instance);
+
+	boolean isDefault(BetterConfig settings, Type type, @Nullable ConfigElementMetadata metadata, @Nullable Object instance) {
+		if (metadata == null || !metadata.hasDefaultValue()) {
+			return false;
+		}
+		return this.toString(settings, type, metadata, instance).equals(TypeUtil.toString(type, metadata.defaultValue()));
 	}
 
 	abstract boolean isConfigTypeEqual(Type type);

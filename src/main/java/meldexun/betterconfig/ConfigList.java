@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -18,6 +20,17 @@ class ConfigList extends ConfigElement {
 
 	void clear() {
 		this.list.clear();
+	}
+
+	@Override
+	String toString(BetterConfig settings, Type type, @Nullable ConfigElementMetadata metadata, @Nullable Object instance) {
+		String s = TypeUtil.toString(type, this);
+		String s1 = this.list.stream()
+				.map(el -> el.toString(settings, type, metadata, instance)) //TODO: prob needs to unwrap metadata
+				.collect(Collectors.joining(", ", "[", "]"));;
+		return this.list.stream()
+				.map(el -> el.toString(settings, type, metadata, instance)) //TODO: prob needs to unwrap metadata
+				.collect(Collectors.joining(", ", "[", "]"));
 	}
 
 	@Override

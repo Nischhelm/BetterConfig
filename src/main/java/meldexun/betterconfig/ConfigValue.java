@@ -13,6 +13,11 @@ class ConfigValue extends ConfigElement {
 	private String value = "";
 
 	@Override
+	String toString(BetterConfig settings, Type type, @Nullable ConfigElementMetadata metadata, @Nullable Object instance) {
+		return value;
+	}
+
+	@Override
 	boolean isConfigTypeEqual(Type type) {
 		return ConfigUtil.isValue(type);
 	}

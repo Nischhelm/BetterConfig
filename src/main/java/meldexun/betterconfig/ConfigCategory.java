@@ -132,6 +132,40 @@ class ConfigCategory extends ConfigElement {
 	}
 
 	@Override
+	String toString(BetterConfig settings, Type type, @Nullable ConfigElementMetadata metadata, @Nullable Object instance) {
+		if (TypeUtil.isMap(type)) {
+			if (ConfigUtil.isCategory(TypeUtil.getValueType(type))) {
+				return "";
+//				String s = this.subcategories.entrySet().stream()
+//						.map(e -> e.getKey() + "=" + e.getValue().toString(settings, type, metadata, instance)) //TODO: prob needs to unwrap metadata
+//						.collect(Collectors.joining(", ", "{", "}"));
+//				return s;
+				//{meldexun.betterconfig.example.TestData@72a90036={ name: Test, testLong: 1, testDouble: 0.0, testEnum: NORTH, testArray: [a, b, c], testList: [a, b, c], testMap: {a=a, b=b, c=c} }, meldexun.betterconfig.example.TestData@703e8fe8={ name: Test, testLong: 1, testDouble: 0.0, testEnum: NORTH, testArray: [a, b, c], testList: [a, b, c], testMap: {a=a, b=b, c=c} }}
+//				return this.subcategories.toString();
+			} else {
+				return this.elements.entrySet().stream()
+						.map(e -> e.getKey() + "=" + e.getValue().toString(settings, type, metadata, instance)) //TODO: prob needs to unwrap metadata
+						.collect(Collectors.joining(", ", "{", "}"));
+			}
+		} else {
+			//[{ name: Test, testLong: 1, testDouble: 0.0, testEnum: NORTH, testArray: [a, b, c], testList: [a, b, c], testMap: {a=a, b=b, c=c} }, { name: Test, testLong: 1, testDouble: 0.0, testEnum: NORTH, testArray: [a, b, c], testList: [a, b, c], testMap: {a=a, b=b, c=c} }]
+			return Arrays.stream(ConfigUtil.getConfigFields(type, instance == null))
+					.map(field -> {
+						String name = getName(settings, type, field);
+						ConfigElement configElement;
+						if (ConfigUtil.isCategory(field.getGenericType())) {
+							configElement = this.subcategories.get(name);
+						} else {
+							configElement = this.elements.get(name);
+						}
+						return configElement != null ? name + ":" + configElement : null;
+					})
+					.filter(Objects::nonNull)
+					.collect(Collectors.joining(", ", "{", "}"));
+		}
+	}
+
+	@Override
 	boolean isConfigTypeEqual(Type type) {
 		return ConfigUtil.isCategory(type);
 	}
@@ -236,7 +270,7 @@ class ConfigCategory extends ConfigElement {
 		// write comment
 		if (writeComment) {
 			if (metadata != null) {
-				if (metadata.optional() && element.isDefault()) {
+				if (metadata.optional() && element.isDefault(settings, type, metadata, instance)) {
 					return false;
 				}
 

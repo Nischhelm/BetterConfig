@@ -222,17 +222,24 @@ class ConfigCategory extends ConfigElement {
 		writer.writeLine('{');
 		writer.incrementIndentation();
 		writer.write(this.elements(settings, type, metadata, instance), (writer1, entry) -> {
-			writeEntry(writer1, settings, entry.name(), entry.configElement(), entry.type(), entry.metadata(), entry.instance(), !TypeUtil.isMap(type));
-			writer1.newLine();
+			if (writeEntry(writer1, settings, entry.name(), entry.configElement(), entry.type(), entry.metadata(), entry.instance(), !TypeUtil.isMap(type))) {
+				writer1.newLine();
+				return true;
+			}
+			return false;
 		});
 		writer.decrementIndentation();
 		writer.write('}');
 	}
 
-	static void writeEntry(ConfigWriter writer, BetterConfig settings, String name, ConfigElement element, Type type, @Nullable ConfigElementMetadata metadata, @Nullable Object instance, boolean writeComment) throws IOException {
+	static boolean writeEntry(ConfigWriter writer, BetterConfig settings, String name, ConfigElement element, Type type, @Nullable ConfigElementMetadata metadata, @Nullable Object instance, boolean writeComment) throws IOException {
 		// write comment
 		if (writeComment) {
 			if (metadata != null) {
+				if (metadata.optional() && element.isDefault()) {
+					return false;
+				}
+
 				if (element instanceof ConfigCategory) {
 					if (metadata.hasComment()) {
 						if (settings.bigCategoryComments()) {
@@ -302,6 +309,8 @@ class ConfigCategory extends ConfigElement {
 
 		// write value
 		element.write(writer, settings, type, metadata, instance);
+
+		return true;
 	}
 
 	static void writeType(ConfigWriter writer, Type type) throws IOException {

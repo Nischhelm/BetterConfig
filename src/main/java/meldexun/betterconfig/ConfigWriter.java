@@ -14,15 +14,14 @@ class ConfigWriter implements AutoCloseable {
 		this.writer = writer;
 	}
 
-	<T> ConfigWriter write(Iterable<T> iterable, ThrowingBiConsumer<ConfigWriter, T, IOException> elementWriter) throws IOException {
+	<T> ConfigWriter write(Iterable<T> iterable, ThrowingBiPredicate<ConfigWriter, T, IOException> elementWriter) throws IOException {
 		return this.write(iterable, elementWriter, ConfigWriter::newLine);
 	}
 
-	<T> ConfigWriter write(Iterable<T> iterable, ThrowingBiConsumer<ConfigWriter, T, IOException> elementWriter, ThrowingConsumer<ConfigWriter, IOException> separatorWriter) throws IOException {
+	<T> ConfigWriter write(Iterable<T> iterable, ThrowingBiPredicate<ConfigWriter, T, IOException> elementWriter, ThrowingConsumer<ConfigWriter, IOException> separatorWriter) throws IOException {
 		Iterator<T> iterator = iterable.iterator();
 		while (iterator.hasNext()) {
-			elementWriter.accept(this, iterator.next());
-			if (iterator.hasNext()) {
+			if (elementWriter.test(this, iterator.next()) && iterator.hasNext()) {
 				separatorWriter.accept(this);
 			}
 		}
